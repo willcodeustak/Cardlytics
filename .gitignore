@@ -1,0 +1,18 @@
+# Virtual environment folders
+venv/
+.venv/
+
+# Python compiled files
+*.pyc
+*.pyo
+*.pyd
+
+# Logs
+*.log
+
+# Mac system files
+.DS_Store
+
+# IDE/editor configs (if you want)
+.vscode/
+.idea/
