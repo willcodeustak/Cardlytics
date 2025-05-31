@@ -16,3 +16,5 @@ venv/
 # IDE/editor configs (if you want)
 .vscode/
 .idea/
+
+.env

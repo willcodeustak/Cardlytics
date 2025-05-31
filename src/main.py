@@ -1,72 +1,42 @@
-import re
-import pandas as pd
-from bs4 import BeautifulSoup
-from utils import fetch_ebay_listings, clean_prices, save_data
+from ebay_scraper import parse_ebay_html
+from pricecharting_scraper import fetch_pricecharting_data, parse_pricecharting_html
+from utils import clean_prices, save_data, fetch_ebay_listings
 
-def parse_ebay_html(html):
-    soup = BeautifulSoup(html, 'lxml')
-    listings = []
+def ebay_flow(search_term, sold_only):
+    html = fetch_ebay_listings(search_term, sold_items=sold_only)
+    return parse_ebay_html(html) if html else None
 
-    items = soup.find_all('li', {'class': 's-item'})
-    print(f"Found {len(items)} items on the page.")  # extra logging
-
-    for item in items:
-        # Extract the price text, skip if missing
-        price_tag = item.find('span', {'class': 's-item__price'})
-        if not price_tag:
-            continue
-        price_text = price_tag.get_text(strip=True)
-        # Remove currency symbols/prefix like 'US $'
-        price_text = re.sub(r'^[A-Za-z$ ]+', '', price_text)
-
-        title_tag = item.find('h3', {'class': 's-item__title'})
-        title = title_tag.get_text(strip=True) if title_tag else ''
-
-        date_tag = item.find('span', {'class': 's-item__title--tagblock'})
-        date_sold = date_tag.get_text(strip=True) if date_tag else ''
-
-        listings.append({
-            'title': title,
-            'price': price_text,
-            'date_sold': date_sold
-        })
-
-    df = pd.DataFrame(listings)
-    return df
+def pricecharting_flow(search_term):
+    html = fetch_pricecharting_data(search_term)
+    return parse_pricecharting_html(html) if html else None
 
 def main():
-    search_term = input("Enter Pokémon card to analyze (e.g. 'pikachu'): ").strip()
-    if not search_term:
-        print("Search term cannot be empty.")
+    source = input("Which source? (eBay/PriceCharting): ").strip().lower()
+    search_term = input("Enter Pokémon card name: ").strip()
+    
+    if source == 'ebay':
+        sold_only = input("Sold items only? (y/n): ").strip().lower() == 'y'
+        df = ebay_flow(search_term, sold_only)
+    elif source == 'pricecharting':
+        df = pricecharting_flow(search_term)
+    else:
+        print("Invalid source")
         return
 
-    sold_only = input("Analyze sold items only? (y/n): ").strip().lower() == 'y'
-
-    print(f"Fetching {'sold' if sold_only else 'current'} listings for '{search_term}'...")
-    html = fetch_ebay_listings(search_term, sold_items=sold_only)
-    if not html:
-        print("No data fetched.")
-        return
-
-    df = parse_ebay_html(html)
-    if df.empty:
-        print("No listings found.")
+    if df is None or df.empty:
+        print("No valid data found")
         return
 
     df = clean_prices(df)
-    if df.empty:
-        print("No valid prices found after cleaning.")
-        return
-
-    print(f"Found {len(df)} listings with prices.")
-    print(f"Average price: ${df['price'].mean():.2f}")
-    print(f"Lowest price: ${df['price'].min():.2f}")
-    print(f"Highest price: ${df['price'].max():.2f}")
-
-    save_data(df, search_term)
+    filename = save_data(df, search_term)
+    
+    print(f"\nResults saved to {filename}")
+    print(f"Found {len(df)} valid listings")
+    if 'price' in df.columns:
+        print(f"Average price: ${df['price'].mean():.2f}")
 
 if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
-            print("\nProcess interrupted by user.")
+        print("\nOperation cancelled")
