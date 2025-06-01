@@ -1,42 +1,30 @@
-import os
-import time
-import random
-import requests
 import pandas as pd
-from config import BASE_URL, HEADERS
+import os
 
-def fetch_ebay_listings(search_term, sold_items=False, retries=2):
-    params = {
-        "_nkw": search_term,
-        "_sacat": 0,
-        "_ipg": 50,
-        "LH_Sold": 1 if sold_items else 0
-    }
-    for attempt in range(retries):
-        try:
-            response = requests.get(
-                BASE_URL,
-                headers=HEADERS,
-                params=params,
-                timeout=10 
-            )
-            response.raise_for_status()
-            return response.text
-        except requests.exceptions.RequestException as e:
-            print(f"Attempt {attempt + 1} failed: {str(e)}")
-            if attempt == retries - 1:
-                return None
-            time.sleep(2 ** attempt + random.uniform(0, 1))
+def process_ebay_response(response, search_term):
+    items = response.get('itemSummaries', [])
+    if not items:
+        return pd.DataFrame()
+    
+    return pd.DataFrame([{
+        'title': item.get('title', ''),
+        'price': float(item['price'].get('value', 0)),
+        'condition': item.get('condition', 'N/A'),
+        'url': item.get('itemWebUrl'),
+        'search_term': search_term.lower()
+    } for item in items])
 
-def clean_prices(df):
-    if 'price' in df.columns:
-        df = df[~df['price'].str.contains('to', na=False)]
-        df['price'] = df['price'].str.replace(r'[^\d.]', '', regex=True)
-    df = df.dropna(subset=df.columns.intersection(['price', 'mid_price']))
-    return df
+def generate_aggregation(df):
+    if df.empty:
+        return pd.DataFrame()
+    
+    return df.groupby('condition').agg({
+        #i would do lowest, highest and average for user intuitive naming convention here but pandas does not allow
+        'price': ['count', 'min', 'max', 'mean']
+    }).round(2)
 
-def save_data(df, search_term):
+def save_data(df, search_term, google_sheets=False):
     os.makedirs('data', exist_ok=True)
-    filename = f'data/{search_term.replace(" ", "_")}_prices.csv'
+    filename = f'data/{search_term.replace(" ", "_")}.csv'
     df.to_csv(filename, index=False)
     return filename

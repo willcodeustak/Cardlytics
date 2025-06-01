@@ -18,3 +18,7 @@ venv/
 .idea/
 
 .env
+data/
+__pycache__/
+*.csv
+google_credentials.json

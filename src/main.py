@@ -1,42 +1,27 @@
-from ebay_scraper import parse_ebay_html
-from pricecharting_scraper import fetch_pricecharting_data, parse_pricecharting_html
-from utils import clean_prices, save_data, fetch_ebay_listings
-
-def ebay_flow(search_term, sold_only):
-    html = fetch_ebay_listings(search_term, sold_items=sold_only)
-    return parse_ebay_html(html) if html else None
-
-def pricecharting_flow(search_term):
-    html = fetch_pricecharting_data(search_term)
-    return parse_pricecharting_html(html) if html else None
+from ebayApi import EBayAPI
+from utils import process_ebay_response, save_data, generate_aggregation
 
 def main():
-    source = input("Which source? (eBay/PriceCharting): ").strip().lower()
+    api = EBayAPI()
+    
+    print("=== Pokémon Card Price Checker ===")
     search_term = input("Enter Pokémon card name: ").strip()
+    card_number = input("Enter card number if known (or press Enter): ").strip()
+    sold_only = input("Sold items only? (y/n): ").lower() == 'y'
+    use_google = input("Save to Google Sheets? (y/n): ").lower() == 'y'
     
-    if source == 'ebay':
-        sold_only = input("Sold items only? (y/n): ").strip().lower() == 'y'
-        df = ebay_flow(search_term, sold_only)
-    elif source == 'pricecharting':
-        df = pricecharting_flow(search_term)
+    data = api.search_items(search_term, card_number if card_number else None, sold_only)
+    df = process_ebay_response(data, search_term)
+    
+    if not df.empty:
+        output = save_data(df, search_term, google_sheets=use_google)
+        print(f"Saved {len(df)} listings to {output}")
+        
+        agg_df = generate_aggregation(df)
+        print("\n=== Price Summary ===")
+        print(agg_df.to_string(index=False))
     else:
-        print("Invalid source")
-        return
-
-    if df is None or df.empty:
-        print("No valid data found")
-        return
-
-    df = clean_prices(df)
-    filename = save_data(df, search_term)
-    
-    print(f"\nResults saved to {filename}")
-    print(f"Found {len(df)} valid listings")
-    if 'price' in df.columns:
-        print(f"Average price: ${df['price'].mean():.2f}")
+        print("No results found")
 
 if __name__ == "__main__":
-    try:
-        main()
-    except KeyboardInterrupt:
-        print("\nOperation cancelled")
+    main()
