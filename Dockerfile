@@ -9,9 +9,6 @@ RUN apt-get update && \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY src/ /app/src/
-RUN mkdir -p /app/data
-
-ENV PYTHONUNBUFFERED=1
+COPY . .
 
 CMD ["python", "src/main.py"]
