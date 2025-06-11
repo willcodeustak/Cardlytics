@@ -7,9 +7,12 @@
 ```bash
 # Build the image
 docker build -t pokemon-prices .
+# ^ Create a Docker image from current directory using Dockerfile
 
 # Run the container
 docker run -it --env-file .env pokemon-prices
+# ^ -it lets you interact with the terminal (needed for input prompts)
+# ^ --env-file loads environment variables from .env
 
 Why No Volume Mount is Needed (For Now)
 Docker containers act like temporary mini-computers that run your application. Normally, anything saved inside the container is lost once it stops.
@@ -17,13 +20,12 @@ Docker containers act like temporary mini-computers that run your application. N
 A volume mount is a way to connect a folder on your actual machine to the container,
 so files (like exports) can be saved outside the container and persist after it closes.
 
-Since this project does not currently save any files (e.g., Google Sheets export is still in development),
-there is no need to set up a volume mount yet. Once export features are added, using a volume mount will ensure your data is saved on your local system.
+Since this project does not currently save any files (e.g., The Excel file functionality is broken),
+there is no need to set up a volume mount yet.
 
 ```
 
-Make sure your .env file (token) is configured correctly before running.
-Youll need a Token Access from eBay
+Youll need a Token Access from eBay.
 
 <h2> After getting lost in eBay’s Find Waldo-esque documentation on activating tokens you've finally arrived </h2>
 
@@ -42,12 +44,10 @@ Youll need a Token Access from eBay
 ![Screenshot 2025-06-01 at 4 05 26 AM](https://github.com/user-attachments/assets/4ddfb5cb-1c81-483b-913d-6ae789d3cebe)
 
 <h2>Choose listing type </h2>
-Y = completed or past sales,
-N = active/current sales
 
-Export to google sheet? ( in development )
+![Screenshot 2025-06-11 at 4 23 55 AM](https://github.com/user-attachments/assets/185e6974-0d5b-40bf-a9d6-300b41e2fe0e)
 
-![Screenshot 2025-06-01 at 4 05 38 AM](https://github.com/user-attachments/assets/82d9b569-e684-4e6e-a68f-1c700c635a55)
+![Screenshot 2025-06-11 at 4 23 05 AM](https://github.com/user-attachments/assets/996f76be-eadf-463c-87df-c2bff3e72ea6)
 
 <h2>All Fetchable Listings (raw, before filtering) </h2>
 
@@ -65,7 +65,7 @@ Export to google sheet? ( in development )
 
 <h2>Comparison Between Cardlytics and PriceCharting </h2>
 
-> Data sets vary, I am ok with the range for now ---> see utils.py for 'filter_outliers_group'.
+> Data sets vary, I am ok with the range for now > see utils.py for 'filter_outliers_group'.
 > Learned about IQR-based Outlier Detection or IQR Filtering logic.
 
 > (Think of it as cutting off the lowest lows and highest highs that are unusually far from the middle). Interesting stuff.
@@ -77,3 +77,50 @@ Export to google sheet? ( in development )
 | **Max Price**         | $340.00         | $417.00            | $55.00            |
 | **Mean Price**        | $249.73         | $286.49            | $55.00            |
 | **Median**            | $247.50         | $265.00            | $55.00            |
+
+<br>
+<br>
+<br>
+
+# Setting Up Google Sheets Functionality
+
+## Create a Google Cloud Project
+
+- Go to https://console.cloud.google.com and create a new project (or use an existing one).
+- Use the search bar to find and enable the **Google Drive API** and **Google Sheets API**.  
+  _You don’t need to enter payment info._
+
+## Enable APIs
+
+- Make sure both **Google Drive API** and **Google Sheets API** are enabled for your project.
+
+## Create a Service Account
+
+- Go to **IAM & Admin → Service Accounts**.
+- Click **Create Service Account**, give it a name (e.g., `sheets-access`).
+- After creating it, go to the **Keys** tab → **Add Key** → **JSON**.
+- This will download a `.json` file - this is your credentials file.
+
+## Save the Credentials File
+
+- Move the downloaded file to your project directory (e.g., `src/google_credentials.json`).
+- <mark>Add it to your `.gitignore` to avoid uploading it to GitHub.<mark>
+
+## Give the Bot Access to a Google Sheet
+
+- Open the JSON file and find the `client_email` value.
+- Create a new Google Sheet and share it with that email, giving it **edit access**.
+
+## Add Your Email to the `.env` File
+
+- In your `.env`, set the email you want the sheet shared with: `GOOGLE_SHEETS_SHARE_EMAIL` = yourname@gmail.com
+- This email will receive access to any Sheets created by the app.
+
+## Finally, run:
+
+```
+docker build -t pokemon-prices .
+
+docker run -it --env-file .env pokemon-prices
+
+```
