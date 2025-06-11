@@ -2,9 +2,48 @@
 
 > (Just a heads up - I am not a financial advisor. You could totally just go to TCGplayer or similar sites and copy/paste recent sales into an AI chatbot yourself then prompt a request to aggregate. I basically just wanted to skip that whole website-visiting step.)
 
-## 🐳 Docker Setup
+- You’ll need to generate an **eBay OAuth token** and place it in your `.env` file.
+
+# Setting Up Google Sheets Functionality
+
+## Create a Google Cloud Project
+
+- Go to https://console.cloud.google.com and create a new project (or use an existing one).
+- Use the search bar to find and enable the **Google Drive API** and **Google Sheets API**.  
+  _You don’t need to enter payment info._
+
+## Enable APIs
+
+- Make sure both **Google Drive API** and **Google Sheets API** are enabled for your project.
+
+## Create a Service Account
+
+- Go to **IAM & Admin → Service Accounts**.
+- Click **Create Service Account**, give it a name (e.g., `sheets-access`).
+- After creating it, go to the **Keys** tab → **Add Key** → **JSON**.
+- This will download a `.json` file - this is your credentials file.
+
+## Save the Credentials File
+
+- Move the downloaded file to your project directory (e.g., `src/google_credentials.json`).
+
+* **Important:** Add it to your `.gitignore` to avoid uploading it to GitHub.
+
+## Give the Bot Access to a Google Sheet
+
+- Open the JSON file and find the `client_email` value.
+- Create a new Google Sheet and share it with that email, giving it **edit access**.
+
+## Add Your Email to the `.env` File
+
+- In your `.env`, set the email you want the sheet shared with: `GOOGLE_SHEETS_SHARE_EMAIL` = yourname@gmail.com
+- This email will receive access to any Sheets created by the app.
+
+## 🐳 Run the App (After Setup Is Complete)
 
 ```bash
+## 🐳 Docker Setup
+
 # Build the image
 docker build -t pokemon-prices .
 # ^ Create a Docker image from current directory using Dockerfile
@@ -13,21 +52,9 @@ docker build -t pokemon-prices .
 docker run -it --env-file .env pokemon-prices
 # ^ -it lets you interact with the terminal (needed for input prompts)
 # ^ --env-file loads environment variables from .env
-
-Why No Volume Mount is Needed (For Now)
-Docker containers act like temporary mini-computers that run your application. Normally, anything saved inside the container is lost once it stops.
-
-A volume mount is a way to connect a folder on your actual machine to the container,
-so files (like exports) can be saved outside the container and persist after it closes.
-
-Since this project does not currently save any files (e.g., The Excel file functionality is broken),
-there is no need to set up a volume mount yet.
-
 ```
 
-Youll need a Token Access from eBay.
-
-<h2> After getting lost in eBay’s Find Waldo-esque documentation on activating tokens you've finally arrived </h2>
+<h2> You made it through the setup maze. Time for the fun part.</h2>
 
 ![Screenshot 2025-06-01 at 4 02 56 AM](https://github.com/user-attachments/assets/971174ca-e9fa-470d-9520-7bb0cb42ca07)
 
@@ -72,55 +99,8 @@ Youll need a Token Access from eBay.
 
 | Statistic             | Cardlytics Data | Pricecharting Data | Condition Unclear |
 | --------------------- | --------------- | ------------------ | ----------------- |
-| **Count of Listings** | 30              | 37                 | 1                 |
-| **Min Price**         | $206.50         | $224.00            | $55.00            |
-| **Max Price**         | $340.00         | $417.00            | $55.00            |
-| **Mean Price**        | $249.73         | $286.49            | $55.00            |
-| **Median**            | $247.50         | $265.00            | $55.00            |
-
-<br>
-<br>
-<br>
-
-# Setting Up Google Sheets Functionality
-
-## Create a Google Cloud Project
-
-- Go to https://console.cloud.google.com and create a new project (or use an existing one).
-- Use the search bar to find and enable the **Google Drive API** and **Google Sheets API**.  
-  _You don’t need to enter payment info._
-
-## Enable APIs
-
-- Make sure both **Google Drive API** and **Google Sheets API** are enabled for your project.
-
-## Create a Service Account
-
-- Go to **IAM & Admin → Service Accounts**.
-- Click **Create Service Account**, give it a name (e.g., `sheets-access`).
-- After creating it, go to the **Keys** tab → **Add Key** → **JSON**.
-- This will download a `.json` file - this is your credentials file.
-
-## Save the Credentials File
-
-- Move the downloaded file to your project directory (e.g., `src/google_credentials.json`).
-- <mark>Add it to your `.gitignore` to avoid uploading it to GitHub.<mark>
-
-## Give the Bot Access to a Google Sheet
-
-- Open the JSON file and find the `client_email` value.
-- Create a new Google Sheet and share it with that email, giving it **edit access**.
-
-## Add Your Email to the `.env` File
-
-- In your `.env`, set the email you want the sheet shared with: `GOOGLE_SHEETS_SHARE_EMAIL` = yourname@gmail.com
-- This email will receive access to any Sheets created by the app.
-
-## Finally, run:
-
-```
-docker build -t pokemon-prices .
-
-docker run -it --env-file .env pokemon-prices
-
-```
+| **Count of Listings** | 37              | 30                 | 1                 |
+| **Min Price**         | $224.00         | $206.50            | $55.00            |
+| **Max Price**         | $417.00         | $340.00            | $55.00            |
+| **Mean Price**        | $286.49         | $249.73            | $55.00            |
+| **Median**            | $265.00         | $247.50            | $55.00            |
