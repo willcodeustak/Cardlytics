@@ -1,5 +1,8 @@
 from ebayApi import EBayAPI
 from utils import process_ebay_response, save_data, generate_aggregation
+# if not running on docker container - running python main.py instead
+from dotenv import load_dotenv 
+load_dotenv()
 
 def main():
     api = EBayAPI()
